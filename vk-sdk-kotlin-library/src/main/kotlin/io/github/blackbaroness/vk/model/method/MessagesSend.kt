@@ -4,13 +4,12 @@ import io.github.blackbaroness.vk.VkClient
 import io.github.blackbaroness.vk.VkMethod
 import io.github.blackbaroness.vk.model.`object`.Keyboard
 import io.ktor.http.*
-import io.ktor.util.reflect.*
 import kotlinx.serialization.Serializable
 
 class MessagesSend : VkMethod<MessagesSend.Result>() {
 
     override val name = "messages.send"
-    override val resultTypeInfo = typeInfo<Result>()
+    override val resultSerializer = Result.serializer()
     override val httpMethod = HttpMethod.Post
 
     var userId by parameter<Long>("user_id")

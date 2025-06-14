@@ -1,17 +1,17 @@
 package io.github.blackbaroness.vk
 
+import io.github.blackbaroness.vk.model.exception.GenericVkException
 import io.github.blackbaroness.vk.model.method.GroupsGetLongPollServer
 import io.github.blackbaroness.vk.model.method.GroupsGetLongPollSettings
 import io.github.blackbaroness.vk.model.method.GroupsSetLongPollSettings
 import io.github.blackbaroness.vk.model.method.MessagesSend
+import io.github.blackbaroness.vk.model.response.VkResponse
 import io.ktor.client.*
-import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.bodyAsText
-import io.ktor.client.statement.request
+import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
@@ -41,7 +41,7 @@ class VkClient(val token: String) : Closeable {
     suspend fun <RESULT, METHOD : VkMethod<RESULT>> execute(method: METHOD, configurator: METHOD.() -> Unit): RESULT {
         configurator.invoke(method)
 
-        return try {
+        try {
             val request = client.request(method.customUrl ?: "https://api.vk.com/method/${method.name}") {
                 this.method = method.httpMethod
                 parameter("access_token", token)
@@ -49,7 +49,12 @@ class VkClient(val token: String) : Closeable {
                 method.parameters.forEach { (key, value) -> parameter(key, value) }
             }
 
-            request.body(method.resultTypeInfo)
+            val response = json.decodeFromString(VkResponse.serializer(method.resultSerializer), request.bodyAsText())
+            if (response.error != null) {
+                throw GenericVkException(response.error.code, response.error.message)
+            }
+
+            return response.response!!
         } catch (e: ResponseException) {
             val body = e.response.bodyAsText()
             val url = e.response.request.url
@@ -75,7 +80,7 @@ class VkClient(val token: String) : Closeable {
 
         suspend fun getLongPollServer(
             groupId: Long,
-            configure: GroupsGetLongPollServer.() -> Unit,
+            configure: GroupsGetLongPollServer.() -> Unit = {},
         ): GroupsGetLongPollServer.Result {
             val method = GroupsGetLongPollServer()
             method.groupId = groupId
@@ -84,14 +89,14 @@ class VkClient(val token: String) : Closeable {
 
         suspend fun getGetLongPollSettings(
             groupId: Long,
-            configure: GroupsGetLongPollSettings.() -> Unit,
+            configure: GroupsGetLongPollSettings.() -> Unit = {},
         ): GroupsGetLongPollSettings.Result {
             val method = GroupsGetLongPollSettings()
             method.groupId = groupId
             return execute(method, configure)
         }
 
-        suspend fun setLongPollSettings(groupId: Long, configure: GroupsSetLongPollSettings.() -> Unit) {
+        suspend fun setLongPollSettings(groupId: Long, configure: GroupsSetLongPollSettings.() -> Unit = {}) {
             val method = GroupsSetLongPollSettings()
             method.groupId = groupId
             execute(method, configure)
@@ -100,7 +105,7 @@ class VkClient(val token: String) : Closeable {
 
     inner class Messages {
 
-        suspend fun send(userId: Long, configure: MessagesSend.() -> Unit) {
+        suspend fun send(userId: Long, configure: MessagesSend.() -> Unit = {}) {
             val method = MessagesSend()
             method.userId = userId
             execute(method, configure)

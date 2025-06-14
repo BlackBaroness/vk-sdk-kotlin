@@ -5,7 +5,6 @@ import io.github.blackbaroness.vk.VkMethod
 import io.github.blackbaroness.vk.model.`object`.ClientInfo
 import io.github.blackbaroness.vk.model.`object`.Message
 import io.ktor.http.*
-import io.ktor.util.reflect.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
@@ -15,7 +14,7 @@ import kotlinx.serialization.json.decodeFromJsonElement
 class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
 
     override val name get() = throw UnsupportedOperationException()
-    override val resultTypeInfo = typeInfo<Result>()
+    override val resultSerializer = Result.serializer()
     override val httpMethod = HttpMethod.Get
 
     override val customUrl: String?
