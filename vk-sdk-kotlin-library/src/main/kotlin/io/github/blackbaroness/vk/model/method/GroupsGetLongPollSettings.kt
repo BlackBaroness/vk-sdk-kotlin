@@ -1,0 +1,23 @@
+package io.github.blackbaroness.vk.model.method
+
+import io.github.blackbaroness.vk.VkMethod
+import io.ktor.http.*
+import io.ktor.util.reflect.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+// https://dev.vk.com/ru/method/groups.getLongPollSettings
+class GroupsGetLongPollSettings : VkMethod<GroupsGetLongPollSettings.Result>() {
+
+    override val name = "groups.getLongPollSettings"
+    override val resultTypeInfo = typeInfo<Result>()
+    override val httpMethod = HttpMethod.Get
+
+    var groupId by parameter<Long>("group_id")
+
+    @Serializable
+    data class Result(
+        @SerialName("is_enabled") val isEnabled: Boolean,
+        val events: Map<String, Int>,
+    )
+}
