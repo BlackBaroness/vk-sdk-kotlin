@@ -29,7 +29,7 @@ class VkClient(val token: String) : Closeable {
         }
 
         install(HttpTimeout) {
-            requestTimeoutMillis = 5000
+            requestTimeoutMillis = 30_000
         }
     }
 

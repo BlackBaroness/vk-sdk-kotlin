@@ -12,7 +12,7 @@ class GroupsSetLongPollSettings : VkMethod<Ok>() {
     override val httpMethod = HttpMethod.Post
 
     var groupId by parameter<Long>("group_id")
-    var enabled by parameter<Boolean>("enabled")
-    var messageNew by parameter<Boolean>("message_new")
-    var messageEvent by parameter<Boolean>("message_event")
+    var enabled by parameter<Int>("enabled")
+    var messageNew by parameter<Int>("message_new")
+    var messageEvent by parameter<Int>("message_event")
 }
