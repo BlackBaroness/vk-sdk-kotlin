@@ -1,10 +1,7 @@
 package io.github.blackbaroness.vk
 
 import io.github.blackbaroness.vk.model.exception.GenericVkException
-import io.github.blackbaroness.vk.model.method.GroupsGetLongPollServer
-import io.github.blackbaroness.vk.model.method.GroupsGetLongPollSettings
-import io.github.blackbaroness.vk.model.method.GroupsSetLongPollSettings
-import io.github.blackbaroness.vk.model.method.MessagesSend
+import io.github.blackbaroness.vk.model.method.*
 import io.github.blackbaroness.vk.model.response.VkResponse
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -13,10 +10,17 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.job
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.*
+import org.slf4j.Logger
 import java.io.Closeable
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class VkClient(val token: String) : Closeable {
 
@@ -60,6 +64,79 @@ class VkClient(val token: String) : Closeable {
             val url = e.response.request.url
             val status = e.response.status
             throw RuntimeException("VK API error: $status\nURL: $url\nResponse body:\n$body", e)
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    fun startLongPolling(communityId: Long, logger: Logger?): Flow<GetUpdatesVkMethod.Result.Update> = flow {
+        var server: String? = null
+        var key: String? = null
+        var ts: String? = null
+        var nextCacheReset = Instant.DISTANT_PAST
+
+        suspend fun ensureLongPollServer() {
+            if (server == null || key == null || ts == null || Clock.System.now() > nextCacheReset) {
+                val serverInfo = groups.getLongPollServer(communityId)
+                server = serverInfo.server
+                key = serverInfo.key
+                ts = serverInfo.ts
+                nextCacheReset = Clock.System.now() + 5.minutes
+            }
+        }
+
+        suspend fun poll() {
+            val response = execute(GetUpdatesVkMethod()) {
+                this.server = server!!
+                this.key = key!!
+                this.ts = ts!!
+            }
+
+            ts = response.ts
+
+            response.updates.forEach { emit(it) }
+        }
+
+        fun handleVkError(t: Throwable): Boolean {
+            val json = t.message
+                ?.let { runCatching { json.parseToJsonElement(it) }.getOrNull() }
+                as? JsonObject
+                ?: return false
+
+            val failed = (json["failed"] as? JsonPrimitive)?.intOrNull ?: return false
+
+            return when (failed) {
+                1 -> {
+                    ts = json["ts"]?.jsonPrimitive?.content
+                    true
+                }
+
+                2, 3 -> {
+                    nextCacheReset = Instant.DISTANT_PAST
+                    true
+                }
+
+                else -> false
+            }
+        }
+
+        while (currentCoroutineContext().isActive) {
+            try {
+                while (currentCoroutineContext().isActive) {
+                    ensureLongPollServer()
+                    poll()
+                }
+            } catch (t: Throwable) {
+                try {
+                    if (!handleVkError(t)) {
+                        logger?.error("Failed to get updates from VK", t)
+                        delay(5.seconds)
+                    }
+                } catch (handleThrowable: Throwable) {
+                    handleThrowable.addSuppressed(t)
+                    logger?.error("Error handling VK error", handleThrowable)
+                    delay(5.seconds)
+                }
+            }
         }
     }
 
