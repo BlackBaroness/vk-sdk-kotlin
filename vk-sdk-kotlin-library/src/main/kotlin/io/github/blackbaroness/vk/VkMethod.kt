@@ -31,7 +31,11 @@ abstract class VkMethod<RESULT> {
             }
 
             override fun setValue(thisRef: Any?, property: KProperty<*>, value: Keyboard?) {
-                parameters[name] = VkClient.json.encodeToString(value)
+                if (value == null) {
+                    parameters.remove(name)
+                } else {
+                    parameters[name] = VkClient.json.encodeToString(value)
+                }
             }
 
         }
