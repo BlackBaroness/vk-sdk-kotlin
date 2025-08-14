@@ -2,10 +2,11 @@ package io.github.blackbaroness.vk.model.method
 
 import io.github.blackbaroness.vk.VkMethod
 import io.ktor.http.*
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // https://dev.vk.com/ru/method/groups.getLongPollServer
-class GroupsGetLongPollServer : VkMethod<GroupsGetLongPollServer.Result>() {
+class GroupsGetLongPollServerVkMethod : VkMethod<GroupsGetLongPollServerVkMethod.Result>() {
 
     override val name = "groups.getLongPollServer"
     override val resultSerializer = Result.serializer()
@@ -15,8 +16,8 @@ class GroupsGetLongPollServer : VkMethod<GroupsGetLongPollServer.Result>() {
 
     @Serializable
     data class Result(
-        val key: String,
-        val server: String,
-        val ts: String,
+        @SerialName("type") val key: String,
+        @SerialName("server") val server: String,
+        @SerialName("ts") val ts: String,
     )
 }

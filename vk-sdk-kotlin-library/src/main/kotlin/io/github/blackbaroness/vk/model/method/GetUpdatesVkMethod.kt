@@ -33,17 +33,15 @@ class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
 
         @Serializable
         data class Update(
-            val type: String,
-            val `object`: JsonElement,
+            @SerialName("type") val type: String,
+            @SerialName("object") val obj: JsonElement,
             @SerialName("group_id") val groupId: Long,
-            @SerialName("event_id") val eventId: String,
-            val v: String,
         ) {
 
             val objectResolved: UpdateObject? by lazy {
                 when (type) {
-                    "message_new" -> json.decodeFromJsonElement<UpdateObject.MessageNew>(`object`)
-                    "message_event" -> json.decodeFromJsonElement<UpdateObject.MessageEvent>(`object`)
+                    "message_new" -> json.decodeFromJsonElement<UpdateObject.MessageNew>(obj)
+                    "message_event" -> json.decodeFromJsonElement<UpdateObject.MessageEvent>(obj)
                     else -> null
                 }
             }
@@ -57,13 +55,17 @@ class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
 
                 @Serializable
                 data class MessageNew(
-                    val message: Message,
+                    @SerialName("message") val message: Message,
                     @SerialName("client_info") val clientInfo: ClientInfo,
                 ) : UpdateObject()
 
+                // https://dev.vk.com/ru/api/community-events/json-schema#message_event
                 @Serializable
                 data class MessageEvent(
-                    val payload: String,
+                    @SerialName("peer_id") val peerId: Long,
+                    @SerialName("from_id") val fromId: Long,
+                    @SerialName("event_id") val eventId: String,
+                    @SerialName("payload") val payload: String,
                     @SerialName("conversation_message_id") val conversationMessageId: Long?,
                 ) : UpdateObject()
             }

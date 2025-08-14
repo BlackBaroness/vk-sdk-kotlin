@@ -5,7 +5,7 @@ import io.github.blackbaroness.vk.model.response.Ok
 import io.ktor.http.*
 
 // https://dev.vk.com/ru/method/groups.isMember
-class GroupsIsMemberSettings : VkMethod<Ok>() {
+class GroupsIsMemberVkMethod : VkMethod<Ok>() {
 
     override val name = "groups.isMember"
     override val resultSerializer = Ok.serializer()

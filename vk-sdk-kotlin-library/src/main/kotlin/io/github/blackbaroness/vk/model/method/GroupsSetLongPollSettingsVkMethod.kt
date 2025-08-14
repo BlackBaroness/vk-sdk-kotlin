@@ -5,7 +5,7 @@ import io.github.blackbaroness.vk.model.response.Ok
 import io.ktor.http.*
 
 // https://dev.vk.com/ru/method/groups.setLongPollSettings
-class GroupsSetLongPollSettings : VkMethod<Ok>() {
+class GroupsSetLongPollSettingsVkMethod : VkMethod<Ok>() {
 
     override val name = "groups.getLongPollSettings"
     override val resultSerializer = Ok.serializer()

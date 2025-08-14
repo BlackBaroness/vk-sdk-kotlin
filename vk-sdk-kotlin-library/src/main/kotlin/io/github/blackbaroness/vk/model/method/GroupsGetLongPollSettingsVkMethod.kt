@@ -6,7 +6,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // https://dev.vk.com/ru/method/groups.getLongPollSettings
-class GroupsGetLongPollSettings : VkMethod<GroupsGetLongPollSettings.Result>() {
+class GroupsGetLongPollSettingsVkMethod : VkMethod<GroupsGetLongPollSettingsVkMethod.Result>() {
 
     override val name = "groups.getLongPollSettings"
     override val resultSerializer = Result.serializer()
@@ -17,6 +17,6 @@ class GroupsGetLongPollSettings : VkMethod<GroupsGetLongPollSettings.Result>() {
     @Serializable
     data class Result(
         @SerialName("is_enabled") val isEnabled: Boolean,
-        val events: Map<String, Int>,
+        @SerialName("events") val events: Map<String, Int>,
     )
 }

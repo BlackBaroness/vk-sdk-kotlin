@@ -2,6 +2,7 @@ package io.github.blackbaroness.vk
 
 import io.github.blackbaroness.vk.model.exception.GenericVkException
 import io.github.blackbaroness.vk.model.method.*
+import io.github.blackbaroness.vk.model.response.Ok
 import io.github.blackbaroness.vk.model.response.VkResponse
 import io.ktor.client.*
 import io.ktor.client.engine.*
@@ -160,35 +161,52 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
 
         suspend fun getLongPollServer(
             groupId: Long,
-            configure: GroupsGetLongPollServer.() -> Unit = {},
-        ): GroupsGetLongPollServer.Result {
-            val method = GroupsGetLongPollServer()
+            configure: GroupsGetLongPollServerVkMethod.() -> Unit = {},
+        ): GroupsGetLongPollServerVkMethod.Result {
+            val method = GroupsGetLongPollServerVkMethod()
             method.groupId = groupId
             return execute(method.apply(configure))
         }
 
         suspend fun getGetLongPollSettings(
             groupId: Long,
-            configure: GroupsGetLongPollSettings.() -> Unit = {},
-        ): GroupsGetLongPollSettings.Result {
-            val method = GroupsGetLongPollSettings()
+            configure: GroupsGetLongPollSettingsVkMethod.() -> Unit = {},
+        ): GroupsGetLongPollSettingsVkMethod.Result {
+            val method = GroupsGetLongPollSettingsVkMethod()
             method.groupId = groupId
             return execute(method.apply(configure))
         }
 
-        suspend fun setLongPollSettings(groupId: Long, configure: GroupsSetLongPollSettings.() -> Unit = {}) {
-            val method = GroupsSetLongPollSettings()
+        suspend fun setLongPollSettings(
+            groupId: Long,
+            configure: GroupsSetLongPollSettingsVkMethod.() -> Unit = {}
+        ): Ok {
+            val method = GroupsSetLongPollSettingsVkMethod()
             method.groupId = groupId
-            execute(method.apply(configure))
+            return execute(method.apply(configure))
+        }
+
+        suspend fun isMember(groupId: String, userId: Long, configure: GroupsIsMemberVkMethod.() -> Unit = {}): Ok {
+            val method = GroupsIsMemberVkMethod()
+            method.groupId = groupId
+            method.userId = userId
+            return execute(method.apply(configure))
         }
     }
 
     inner class Messages {
 
-        suspend fun send(userId: Long, configure: MessagesSend.() -> Unit = {}) {
-            val method = MessagesSend()
+        suspend fun send(userId: Long, configure: MessagesSendVkMethod.() -> Unit = {}): MessagesSendVkMethod.Result {
+            val method = MessagesSendVkMethod()
             method.userId = userId
-            execute(method.apply(configure))
+            return execute(method.apply(configure))
+        }
+
+        suspend fun edit(peerId: Long, message: String, configure: MessagesEditVkMethod.() -> Unit = {}): Ok {
+            val method = MessagesEditVkMethod()
+            method.peerId = peerId
+            method.message = message
+            return execute(method.apply(configure))
         }
     }
 }
