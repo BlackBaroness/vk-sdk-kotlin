@@ -11,8 +11,8 @@ abstract class VkMethod<RESULT> {
     val parameters: MutableMap<String, Any?> = mutableMapOf()
     abstract val resultSerializer: KSerializer<RESULT>
     abstract val httpMethod: HttpMethod
+    abstract val resultStyle: ResultStyle
     open val customUrl: String? = null
-    open val isResultWrapped: Boolean = true
 
     @Suppress("UNCHECKED_CAST")
     protected fun <T> parameter(name: String): ReadWriteProperty<Any?, T?> =
@@ -35,4 +35,10 @@ abstract class VkMethod<RESULT> {
             }
 
         }
+
+    enum class ResultStyle {
+        CUSTOM,
+        OPTIONAL_ERROR_FIELD,
+        WRAPPED_IN_RESPONSE
+    }
 }

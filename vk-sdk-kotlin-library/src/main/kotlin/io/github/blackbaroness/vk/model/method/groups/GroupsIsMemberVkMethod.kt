@@ -10,6 +10,7 @@ class GroupsIsMemberVkMethod : VkMethod<Ok>() {
     override val name = "groups.isMember"
     override val resultSerializer = Ok.serializer()
     override val httpMethod = HttpMethod.Get
+    override val resultStyle = ResultStyle.WRAPPED_IN_RESPONSE
 
     var groupId by parameter<String>("group_id")
     var userId by parameter<Long>("user_id")

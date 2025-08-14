@@ -11,6 +11,7 @@ class GroupsGetLongPollServerVkMethod : VkMethod<GroupsGetLongPollServerVkMethod
     override val name = "groups.getLongPollServer"
     override val resultSerializer = Result.serializer()
     override val httpMethod = HttpMethod.Get
+    override val resultStyle = ResultStyle.WRAPPED_IN_RESPONSE
 
     var groupId by parameter<Long>("group_id")
 

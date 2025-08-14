@@ -12,6 +12,7 @@ import io.github.blackbaroness.vk.model.method.users.UsersGetVkMethod
 import io.github.blackbaroness.vk.model.`object`.User
 import io.github.blackbaroness.vk.model.response.Ok
 import io.github.blackbaroness.vk.model.response.VkResponse
+import io.github.blackbaroness.vk.model.response.VkResponseWithNoResponse
 import io.ktor.client.*
 import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
@@ -69,22 +70,23 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
             status = httpResponse.status
             answer = httpResponse.bodyAsText()
 
-            if (!method.isResultWrapped) {
-                return json.decodeFromString(method.resultSerializer, answer)
+            return when (method.resultStyle) {
+
+                VkMethod.ResultStyle.CUSTOM ->
+                    json.decodeFromString(method.resultSerializer, answer)
+
+                VkMethod.ResultStyle.OPTIONAL_ERROR_FIELD -> {
+                    val response = json.decodeFromString<VkResponseWithNoResponse>(answer)
+                    if (response.error != null) throw GenericVkException(response.error.code, response.error.message)
+                    json.decodeFromString(method.resultSerializer, answer)
+                }
+
+                VkMethod.ResultStyle.WRAPPED_IN_RESPONSE -> {
+                    val response = json.decodeFromString(VkResponse.serializer(method.resultSerializer), answer)
+                    if (response.error != null) throw GenericVkException(response.error.code, response.error.message)
+                    response.response ?: throw NullPointerException("wrappedResult.response")
+                }
             }
-
-            val wrappedResult = json.decodeFromString(VkResponse.serializer(method.resultSerializer), answer)
-
-            if (wrappedResult.error != null) {
-                throw GenericVkException(wrappedResult.error.code, wrappedResult.error.message)
-            }
-
-            if (wrappedResult.response == null) {
-                throw NullPointerException("wrappedResult.response")
-            }
-
-            return wrappedResult.response
-
         } catch (e: Throwable) {
             throw RuntimeException(
                 """

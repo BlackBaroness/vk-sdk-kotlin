@@ -16,7 +16,7 @@ class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
     override val name get() = throw UnsupportedOperationException()
     override val resultSerializer = Result.serializer()
     override val httpMethod = HttpMethod.Get
-    override val isResultWrapped = false
+    override val resultStyle = ResultStyle.CUSTOM
 
     override val customUrl: String?
         get() = "$server?act=a_check&key=$key&ts=$ts&wait=$wait"

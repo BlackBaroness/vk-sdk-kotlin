@@ -10,6 +10,7 @@ class GroupsSetLongPollSettingsVkMethod : VkMethod<Int>() {
     override val name = "groups.setLongPollSettings"
     override val resultSerializer = serializer<Int>()
     override val httpMethod = HttpMethod.Post
+    override val resultStyle = ResultStyle.WRAPPED_IN_RESPONSE
 
     var groupId by parameter<Long>("group_id")
     var enabled by parameter<Int>("enabled")

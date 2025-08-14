@@ -11,6 +11,7 @@ class UsersGetVkMethod : VkMethod<List<User>>() {
     override val name = "users.get"
     override val resultSerializer = serializer<List<User>>()
     override val httpMethod = HttpMethod.Get
+    override val resultStyle = ResultStyle.WRAPPED_IN_RESPONSE
 
     var userIds by parameter<String>("user_ids")
 }
