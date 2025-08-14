@@ -194,7 +194,7 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
         suspend fun setLongPollSettings(
             groupId: Long,
             configure: GroupsSetLongPollSettingsVkMethod.() -> Unit = {}
-        ): Ok {
+        ): Int {
             val method = GroupsSetLongPollSettingsVkMethod()
             method.groupId = groupId
             return execute(method.apply(configure))
