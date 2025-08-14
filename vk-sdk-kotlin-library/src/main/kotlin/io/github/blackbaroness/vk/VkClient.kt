@@ -60,7 +60,12 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
                 clientConfigurator()
             }
 
-            val response = json.decodeFromString(VkResponse.serializer(method.resultSerializer), request.bodyAsText())
+            val response = try {
+                json.decodeFromString(VkResponse.serializer(method.resultSerializer), request.bodyAsText())
+            } catch (e: Throwable) {
+                throw RuntimeException("Error decoding VK answer: ${request.bodyAsText()}", e)
+            }
+
             if (response.error != null) {
                 throw GenericVkException(response.error.code, response.error.message)
             }
