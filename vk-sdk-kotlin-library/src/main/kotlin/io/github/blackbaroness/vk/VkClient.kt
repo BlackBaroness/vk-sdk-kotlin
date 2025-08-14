@@ -17,6 +17,7 @@ import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.http.HttpStatusCode
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -50,8 +51,13 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
         method: METHOD,
         clientConfigurator: HttpRequestBuilder.() -> Unit = {}
     ): RESULT {
+        var url: String? = null
+        var answer: String? = null
+        var status: HttpStatusCode? = null
+
         try {
-            val request = client.request(method.customUrl ?: "https://api.vk.com/method/${method.name}") {
+            url = method.customUrl ?: "https://api.vk.com/method/${method.name}"
+            val httpResponse = client.request(url) {
                 this.method = method.httpMethod
                 parameter("access_token", token)
                 parameter("v", "5.199")
@@ -60,30 +66,33 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
                 clientConfigurator()
             }
 
+            status = httpResponse.status
+            answer = httpResponse.bodyAsText()
+
             if (method.isResultWrapped) {
-                val response = try {
-                    json.decodeFromString(VkResponse.serializer(method.resultSerializer), request.bodyAsText())
-                } catch (e: Throwable) {
-                    throw RuntimeException("Error decoding VK answer: ${request.bodyAsText()}", e)
+                val wrappedResult =    json.decodeFromString(VkResponse.serializer(method.resultSerializer), answer)
+
+                if (wrappedResult.error != null) {
+                    throw GenericVkException(wrappedResult.error.code, wrappedResult.error.message)
                 }
 
-                if (response.error != null) {
-                    throw GenericVkException(response.error.code, response.error.message)
+                if (wrappedResult.response == null) {
+                    throw NullPointerException("wrappedResult.response")
                 }
 
-                if (response.response == null) {
-                    throw RuntimeException("Null response! Full response: '$response', url: '${request.request.url}', answer: '${request.bodyAsText()}'")
-                }
-
-                return response.response
+                return wrappedResult.response
             } else {
-                return json.decodeFromString(method.resultSerializer, request.bodyAsText())
+                return json.decodeFromString(method.resultSerializer, httpResponse.bodyAsText())
             }
-        } catch (e: ResponseException) {
-            val body = e.response.bodyAsText()
-            val url = e.response.request.url
-            val status = e.response.status
-            throw RuntimeException("VK API error: $status\nURL: $url\nResponse body:\n$body", e)
+        } catch (e: Throwable) {
+            throw RuntimeException("""
+                VK API error
+                Method: ${method::class.simpleName}
+                Url: $url
+                Method parameters: ${method.parameters}
+                Status: $status
+                Answer: $answer
+            """.trimIndent(), e)
         }
     }
 
