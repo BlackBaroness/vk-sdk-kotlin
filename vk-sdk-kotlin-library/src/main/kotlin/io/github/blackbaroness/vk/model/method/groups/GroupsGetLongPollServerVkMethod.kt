@@ -16,7 +16,7 @@ class GroupsGetLongPollServerVkMethod : VkMethod<GroupsGetLongPollServerVkMethod
 
     @Serializable
     data class Result(
-        @SerialName("type") val key: String,
+        @SerialName("key") val key: String,
         @SerialName("server") val server: String,
         @SerialName("ts") val ts: String,
     )
