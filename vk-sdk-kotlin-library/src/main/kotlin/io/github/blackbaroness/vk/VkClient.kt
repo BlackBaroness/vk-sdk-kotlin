@@ -4,12 +4,10 @@ import io.github.blackbaroness.vk.model.exception.GenericVkException
 import io.github.blackbaroness.vk.model.method.*
 import io.github.blackbaroness.vk.model.response.VkResponse
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
+import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -22,18 +20,14 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-class VkClient(val token: String) : Closeable {
+class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : Closeable {
 
     val groups = Groups()
     val messages = Messages()
 
-    val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(json)
-        }
-
+    val client = HttpClient(clientFactory) {
         install(HttpTimeout) {
-            requestTimeoutMillis = 30_000
+            requestTimeoutMillis = 5_000
         }
     }
 
@@ -42,15 +36,18 @@ class VkClient(val token: String) : Closeable {
         runBlocking { client.coroutineContext.job.join() }
     }
 
-    suspend fun <RESULT, METHOD : VkMethod<RESULT>> execute(method: METHOD, configurator: METHOD.() -> Unit): RESULT {
-        configurator.invoke(method)
-
+    suspend fun <RESULT, METHOD : VkMethod<RESULT>> execute(
+        method: METHOD,
+        clientConfigurator: HttpRequestBuilder.() -> Unit = {}
+    ): RESULT {
         try {
             val request = client.request(method.customUrl ?: "https://api.vk.com/method/${method.name}") {
                 this.method = method.httpMethod
                 parameter("access_token", token)
                 parameter("v", "5.199")
                 method.parameters.forEach { (key, value) -> parameter(key, value) }
+
+                clientConfigurator()
             }
 
             val response = json.decodeFromString(VkResponse.serializer(method.resultSerializer), request.bodyAsText())
@@ -85,10 +82,16 @@ class VkClient(val token: String) : Closeable {
         }
 
         suspend fun poll() {
-            val response = execute(GetUpdatesVkMethod()) {
+            val method = GetUpdatesVkMethod().apply {
                 this.server = server!!
                 this.key = key!!
                 this.ts = ts!!
+            }
+
+            val response = execute(method) {
+                timeout {
+                    requestTimeoutMillis = (method.wait.seconds + 5.seconds).inWholeMilliseconds
+                }
             }
 
             ts = response.ts
@@ -161,7 +164,7 @@ class VkClient(val token: String) : Closeable {
         ): GroupsGetLongPollServer.Result {
             val method = GroupsGetLongPollServer()
             method.groupId = groupId
-            return execute(method, configure)
+            return execute(method.apply(configure))
         }
 
         suspend fun getGetLongPollSettings(
@@ -170,13 +173,13 @@ class VkClient(val token: String) : Closeable {
         ): GroupsGetLongPollSettings.Result {
             val method = GroupsGetLongPollSettings()
             method.groupId = groupId
-            return execute(method, configure)
+            return execute(method.apply(configure))
         }
 
         suspend fun setLongPollSettings(groupId: Long, configure: GroupsSetLongPollSettings.() -> Unit = {}) {
             val method = GroupsSetLongPollSettings()
             method.groupId = groupId
-            execute(method, configure)
+            execute(method.apply(configure))
         }
     }
 
@@ -185,7 +188,7 @@ class VkClient(val token: String) : Closeable {
         suspend fun send(userId: Long, configure: MessagesSend.() -> Unit = {}) {
             val method = MessagesSend()
             method.userId = userId
-            execute(method, configure)
+            execute(method.apply(configure))
         }
     }
 }
