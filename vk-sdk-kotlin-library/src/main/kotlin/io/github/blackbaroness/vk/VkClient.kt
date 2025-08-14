@@ -60,21 +60,25 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
                 clientConfigurator()
             }
 
-            val response = try {
-                json.decodeFromString(VkResponse.serializer(method.resultSerializer), request.bodyAsText())
-            } catch (e: Throwable) {
-                throw RuntimeException("Error decoding VK answer: ${request.bodyAsText()}", e)
-            }
+            if (method.isResultWrapped) {
+                val response = try {
+                    json.decodeFromString(VkResponse.serializer(method.resultSerializer), request.bodyAsText())
+                } catch (e: Throwable) {
+                    throw RuntimeException("Error decoding VK answer: ${request.bodyAsText()}", e)
+                }
 
-            if (response.error != null) {
-                throw GenericVkException(response.error.code, response.error.message)
-            }
+                if (response.error != null) {
+                    throw GenericVkException(response.error.code, response.error.message)
+                }
 
-            if (response.response == null) {
-                throw RuntimeException("Null response! Full response: '$response', url: '${request.request.url}', answer: '${request.bodyAsText()}'")
-            }
+                if (response.response == null) {
+                    throw RuntimeException("Null response! Full response: '$response', url: '${request.request.url}', answer: '${request.bodyAsText()}'")
+                }
 
-            return response.response
+                return response.response
+            } else {
+                return json.decodeFromString(method.resultSerializer, request.bodyAsText())
+            }
         } catch (e: ResponseException) {
             val body = e.response.bodyAsText()
             val url = e.response.request.url

@@ -1,7 +1,6 @@
 package io.github.blackbaroness.vk.model.method.groups
 
 import io.github.blackbaroness.vk.VkMethod
-import io.github.blackbaroness.vk.model.response.Ok
 import io.ktor.http.*
 import kotlinx.serialization.serializer
 

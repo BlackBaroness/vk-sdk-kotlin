@@ -20,6 +20,9 @@ class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
     override val customUrl: String?
         get() = "$server?act=a_check&key=$key&ts=$ts&wait=$wait"
 
+    override val isResultWrapped: Boolean
+        get() = false
+
     lateinit var key: String
     lateinit var server: String
     lateinit var ts: String

@@ -12,6 +12,7 @@ abstract class VkMethod<RESULT> {
     abstract val resultSerializer: KSerializer<RESULT>
     abstract val httpMethod: HttpMethod
     open val customUrl: String? = null
+    open val isResultWrapped: Boolean = true
 
     @Suppress("UNCHECKED_CAST")
     protected fun <T> parameter(name: String): ReadWriteProperty<Any?, T?> =
