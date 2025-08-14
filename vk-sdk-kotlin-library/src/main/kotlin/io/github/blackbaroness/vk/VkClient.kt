@@ -17,7 +17,7 @@ import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.http.HttpStatusCode
+import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -69,30 +69,33 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
             status = httpResponse.status
             answer = httpResponse.bodyAsText()
 
-            if (method.isResultWrapped) {
-                val wrappedResult =    json.decodeFromString(VkResponse.serializer(method.resultSerializer), answer)
-
-                if (wrappedResult.error != null) {
-                    throw GenericVkException(wrappedResult.error.code, wrappedResult.error.message)
-                }
-
-                if (wrappedResult.response == null) {
-                    throw NullPointerException("wrappedResult.response")
-                }
-
-                return wrappedResult.response
-            } else {
-                return json.decodeFromString(method.resultSerializer, httpResponse.bodyAsText())
+            if (!method.isResultWrapped) {
+                return json.decodeFromString(method.resultSerializer, answer)
             }
+
+            val wrappedResult = json.decodeFromString(VkResponse.serializer(method.resultSerializer), answer)
+
+            if (wrappedResult.error != null) {
+                throw GenericVkException(wrappedResult.error.code, wrappedResult.error.message)
+            }
+
+            if (wrappedResult.response == null) {
+                throw NullPointerException("wrappedResult.response")
+            }
+
+            return wrappedResult.response
+
         } catch (e: Throwable) {
-            throw RuntimeException("""
+            throw RuntimeException(
+                """
                 VK API error
                 Method: ${method::class.simpleName}
                 Url: $url
                 Method parameters: ${method.parameters}
                 Status: $status
                 Answer: $answer
-            """.trimIndent(), e)
+            """.trimIndent(), e
+            )
         }
     }
 
