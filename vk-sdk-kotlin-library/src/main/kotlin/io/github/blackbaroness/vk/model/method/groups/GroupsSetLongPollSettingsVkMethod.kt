@@ -8,7 +8,7 @@ import kotlinx.serialization.serializer
 // https://dev.vk.com/ru/method/groups.setLongPollSettings
 class GroupsSetLongPollSettingsVkMethod : VkMethod<Int>() {
 
-    override val name = "groups.getLongPollSettings"
+    override val name = "groups.setLongPollSettings"
     override val resultSerializer = serializer<Int>()
     override val httpMethod = HttpMethod.Post
 
