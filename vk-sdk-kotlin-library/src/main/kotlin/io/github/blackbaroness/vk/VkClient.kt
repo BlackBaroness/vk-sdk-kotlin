@@ -70,7 +70,11 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
                 throw GenericVkException(response.error.code, response.error.message)
             }
 
-            return response.response!!
+            if (response.response == null) {
+                throw RuntimeException("Null response! Full response: '$response', url: '${request.request.url}', answer: '${request.bodyAsText()}'")
+            }
+
+            return response.response
         } catch (e: ResponseException) {
             val body = e.response.bodyAsText()
             val url = e.response.request.url
