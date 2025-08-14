@@ -1,7 +1,15 @@
 package io.github.blackbaroness.vk
 
 import io.github.blackbaroness.vk.model.exception.GenericVkException
-import io.github.blackbaroness.vk.model.method.*
+import io.github.blackbaroness.vk.model.method.GetUpdatesVkMethod
+import io.github.blackbaroness.vk.model.method.groups.GroupsGetLongPollServerVkMethod
+import io.github.blackbaroness.vk.model.method.groups.GroupsGetLongPollSettingsVkMethod
+import io.github.blackbaroness.vk.model.method.groups.GroupsIsMemberVkMethod
+import io.github.blackbaroness.vk.model.method.groups.GroupsSetLongPollSettingsVkMethod
+import io.github.blackbaroness.vk.model.method.messages.MessagesEditVkMethod
+import io.github.blackbaroness.vk.model.method.messages.MessagesSendVkMethod
+import io.github.blackbaroness.vk.model.method.users.UsersGetVkMethod
+import io.github.blackbaroness.vk.model.`object`.User
 import io.github.blackbaroness.vk.model.response.Ok
 import io.github.blackbaroness.vk.model.response.VkResponse
 import io.ktor.client.*
@@ -25,6 +33,7 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
 
     val groups = Groups()
     val messages = Messages()
+    val users = Users()
 
     val client = HttpClient(clientFactory) {
         install(HttpTimeout) {
@@ -207,6 +216,15 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
             method.peerId = peerId
             method.message = message
             return execute(method.apply(configure))
+        }
+    }
+
+    inner class Users {
+
+        suspend fun get(userId: Long, configure: UsersGetVkMethod.() -> Unit = {}): User {
+            val method = UsersGetVkMethod()
+            method.userIds = userId.toString()
+            return execute(method.apply(configure)).single()
         }
     }
 }

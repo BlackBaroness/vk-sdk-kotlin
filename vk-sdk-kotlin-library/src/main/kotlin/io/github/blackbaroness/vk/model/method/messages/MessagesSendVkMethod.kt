@@ -1,4 +1,4 @@
-package io.github.blackbaroness.vk.model.method
+package io.github.blackbaroness.vk.model.method.messages
 
 import io.github.blackbaroness.vk.VkMethod
 import io.ktor.http.*
