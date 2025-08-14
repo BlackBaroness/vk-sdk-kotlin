@@ -11,6 +11,7 @@ class MessagesSendVkMethod : VkMethod<MessagesSendVkMethod.Result>() {
     override val name = "messages.send"
     override val resultSerializer = Result.serializer()
     override val httpMethod = HttpMethod.Post
+    override val isResultWrapped = false
 
     var userId by parameter<Long>("user_id")
     var randomId by parameter<Int>("random_id")
