@@ -10,7 +10,7 @@ class MessagesEditVkMethod : VkMethod<Ok>() {
     override val name = "messages.edit"
     override val resultSerializer = Ok.serializer()
     override val httpMethod = HttpMethod.Post
-    override val resultStyle = ResultStyle.WRAPPED_IN_RESPONSE
+    override val resultStyle = ResultStyle.OPTIONAL_ERROR_FIELD
 
     var peerId by parameter<Long>("peer_id")
     var message by parameter<String>("message")

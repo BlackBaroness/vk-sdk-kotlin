@@ -64,7 +64,7 @@ class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
                 @Serializable
                 data class MessageEvent(
                     @SerialName("peer_id") val peerId: Long,
-                    @SerialName("from_id") val fromId: Long,
+                    @SerialName("user_id") val userId: Long,
                     @SerialName("event_id") val eventId: String,
                     @SerialName("payload") val payload: String,
                     @SerialName("conversation_message_id") val conversationMessageId: Long?,

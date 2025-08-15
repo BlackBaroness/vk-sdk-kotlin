@@ -19,3 +19,7 @@ kotlin {
 tasks.test {
     useJUnitPlatform()
 }
+
+// local artifact is "io.github.blackbaroness:vk-sdk-kotlin-library:SNAPSHOT"
+group = "io.github.blackbaroness"
+version = "SNAPSHOT"

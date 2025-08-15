@@ -137,6 +137,9 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
         }
 
         fun handleVkError(t: Throwable): Boolean {
+            if (t.isRelatedToCancellation)
+                return true
+
             val json = t.message
                 ?.let { runCatching { json.parseToJsonElement(it) }.getOrNull() }
                 as? JsonObject
@@ -190,6 +193,7 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
             useArrayPolymorphism = false
             ignoreUnknownKeys = true
             coerceInputValues = true
+            explicitNulls = false
         }
     }
 
@@ -254,4 +258,16 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
             return execute(method.apply(configure)).single()
         }
     }
+
+    private val Throwable.isRelatedToCancellation: Boolean
+        get() {
+            var throwable = this
+            while (true) {
+                if (throwable.isCancellationException) return true
+                throwable = throwable.cause ?: return false
+            }
+        }
+
+    private val Throwable.isCancellationException: Boolean
+        get() = this is CancellationException
 }
