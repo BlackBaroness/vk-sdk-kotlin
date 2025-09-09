@@ -20,6 +20,6 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// local artifact is "io.github.blackbaroness:vk-sdk-kotlin-library:SNAPSHOT"
+// local artifact is "io.github.blackbaroness:vk-sdk-kotlin:SNAPSHOT"
 group = "io.github.blackbaroness"
 version = "SNAPSHOT"

@@ -5,6 +5,7 @@ plugins {
 rootProject.name = "vk-sdk-kotlin"
 
 include(
-    //"vk-sdk-kotlin-generator",
-    "vk-sdk-kotlin-library"
+    "vk-sdk-kotlin"
 )
+
+
