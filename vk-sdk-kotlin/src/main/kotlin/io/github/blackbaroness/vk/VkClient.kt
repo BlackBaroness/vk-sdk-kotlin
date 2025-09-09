@@ -57,7 +57,7 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
         var status: HttpStatusCode? = null
 
         try {
-            url = method.customUrl ?: "https://api.vk.com/method/${method.name}"
+            url = method.customUrl ?: "https://api.vk.ru/method/${method.name}"
             val httpResponse = client.request(url) {
                 this.method = method.httpMethod
                 parameter("access_token", token)
