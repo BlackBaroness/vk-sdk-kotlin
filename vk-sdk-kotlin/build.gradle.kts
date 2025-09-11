@@ -9,7 +9,7 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    implementation("io.ktor:ktor-client-core:3.2.3")
+    implementation("io.ktor:ktor-client-core:3.3.0")
 }
 
 kotlin {
