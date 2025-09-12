@@ -30,7 +30,7 @@ bot.groups.setLongPollSettings(groupId) {
 fun handleUpdate(update: Update) {
     // cast update to "message new" if possible, otherwise just ignore
     update.asMessageNew?.also { update ->
-        // just send the copy of text as a reply to the message receivedb
+        // just send the copy of text as a reply to the message received
         bot.messages.send(update.message.fromId) {
             replyTo = update.message.id
             message = update.message.text
@@ -39,7 +39,7 @@ fun handleUpdate(update: Update) {
 }
 
 // now we are ready to poll updates
-// since bot#startLongPolling will suspend us, we better start it on other scope
+// since .collect will suspend us, we better start it on other coroutine
 val pollJob = scope.launch(Dispatchers.Default) {
     bot.startLongPolling(groupId, logger).collect { update ->
         try {
