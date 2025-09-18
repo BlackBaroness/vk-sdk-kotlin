@@ -23,7 +23,7 @@ tasks.test {
 mavenPublishing {
     publishToMavenCentral()
     signAllPublications()
-    coordinates("io.github.blackbaroness", "vk-sdk-kotlin", "1.0.0")
+    coordinates("io.github.blackbaroness", "vk-sdk-kotlin", rootProject.version.toString())
 
     pom {
         name.set("VK SDK Kotlin")
