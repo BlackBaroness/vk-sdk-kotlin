@@ -136,11 +136,11 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
             response.updates.forEach { emit(it) }
         }
 
-        fun handleVkError(t: Throwable): Boolean {
-            if (t.isRelatedToCancellation)
+        fun handleVkError(throwable: Throwable): Boolean {
+            if (throwable.isRelatedToCancellation || throwable.isRelatedToTimeout)
                 return true
 
-            val json = t.message
+            val json = throwable.message
                 ?.let { runCatching { json.parseToJsonElement(it) }.getOrNull() }
                 as? JsonObject
                 ?: return false
@@ -171,12 +171,12 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
             } catch (t: Throwable) {
                 try {
                     if (!handleVkError(t)) {
-                        logger?.error("Failed to get updates from VK", t)
+                        logger?.error("Failed to get updates from VK, waiting 5s before retry", t)
                         delay(5.seconds)
                     }
                 } catch (handleThrowable: Throwable) {
                     handleThrowable.addSuppressed(t)
-                    logger?.error("Error handling VK error", handleThrowable)
+                    logger?.error("Error handling VK error, waiting 5s before retry", handleThrowable)
                     delay(5.seconds)
                 }
             }
@@ -270,4 +270,16 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
 
     private val Throwable.isCancellationException: Boolean
         get() = this is CancellationException
+
+    private val Throwable.isRelatedToTimeout: Boolean
+        get() {
+            var throwable = this
+            while (true) {
+                if (throwable.isTimeoutException) return true
+                throwable = throwable.cause ?: return false
+            }
+        }
+
+    private val Throwable.isTimeoutException: Boolean
+        get() = this is HttpRequestTimeoutException
 }

@@ -18,8 +18,7 @@ class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
     override val httpMethod = HttpMethod.Get
     override val resultStyle = ResultStyle.CUSTOM
 
-    override val customUrl: String?
-        get() = "$server?act=a_check&key=$key&ts=$ts&wait=$wait"
+    override val customUrl get() = "$server?act=a_check&key=$key&ts=$ts&wait=$wait"
 
     lateinit var key: String
     lateinit var server: String

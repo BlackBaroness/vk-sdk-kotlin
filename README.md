@@ -4,7 +4,7 @@ The only VK (https://vk.ru) SDK for JVM that’s actually usable.
 
 - Built with Kotlin in mind (`ktor`, `kotlinx.serialization`)
 - Minimal, fast, and efficient
-- Non-blocking (fully async with `CIO` or any other Ktor HTTP client)
+- Non-blocking (consumes no threads if you use `CIO` as a Ktor HTTP client)
 - Object-oriented: run multiple independent bots and shut them down cleanly, no hidden static mess
 
 **Note:** the API coverage is far from 100%, but you can easily contribute by adding methods you need.
