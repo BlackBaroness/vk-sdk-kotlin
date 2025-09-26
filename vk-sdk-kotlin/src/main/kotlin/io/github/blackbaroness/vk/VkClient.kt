@@ -26,12 +26,17 @@ import kotlinx.serialization.json.*
 import org.slf4j.Logger
 import java.io.Closeable
 import kotlin.time.Clock
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : Closeable {
+class VkClient(
+    val token: String,
+    clientFactory: HttpClientEngineFactory<*>,
+    timeoutConfiguration: TimeoutConfiguration = TimeoutConfiguration()
+) : Closeable {
 
     val groups = Groups()
     val messages = Messages()
@@ -39,7 +44,9 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
 
     val client = HttpClient(clientFactory) {
         install(HttpTimeout) {
-            requestTimeoutMillis = 5_000
+            connectTimeoutMillis = timeoutConfiguration.connectTimeoutMillis.inWholeMilliseconds
+            socketTimeoutMillis = timeoutConfiguration.socketTimeoutMillis.inWholeMilliseconds
+            requestTimeoutMillis = timeoutConfiguration.requestTimeoutMillis.inWholeMilliseconds
         }
     }
 
@@ -127,7 +134,8 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
 
             val response = execute(method) {
                 timeout {
-                    requestTimeoutMillis = (method.wait.seconds + 5.seconds).inWholeMilliseconds
+                    socketTimeoutMillis = (method.wait.seconds + 5.seconds).inWholeMilliseconds
+                    requestTimeoutMillis = (method.wait.seconds + 10.seconds).inWholeMilliseconds
                 }
             }
 
@@ -258,6 +266,12 @@ class VkClient(val token: String, clientFactory: HttpClientEngineFactory<*>) : C
             return execute(method.apply(configure)).single()
         }
     }
+
+    data class TimeoutConfiguration(
+        val connectTimeoutMillis: Duration = 3.seconds,
+        val socketTimeoutMillis: Duration = 5.seconds,
+        val requestTimeoutMillis: Duration = 10.seconds
+    )
 
     private val Throwable.isRelatedToCancellation: Boolean
         get() {
