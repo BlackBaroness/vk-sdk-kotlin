@@ -5,10 +5,14 @@ import io.github.blackbaroness.vk.VkMethod
 import io.github.blackbaroness.vk.model.`object`.ClientInfo
 import io.github.blackbaroness.vk.model.`object`.Message
 import io.ktor.http.*
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.*
 
 // https://dev.vk.com/ru/api/bots-long-poll/getting-started
 class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
@@ -65,10 +69,26 @@ class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
                     @SerialName("peer_id") val peerId: Long,
                     @SerialName("user_id") val userId: Long,
                     @SerialName("event_id") val eventId: String,
-                    @SerialName("payload") val payload: String,
+                    @SerialName("payload") @Serializable(with = PayloadAsStringSerializer::class) val payload: String,
                     @SerialName("conversation_message_id") val conversationMessageId: Long?,
                 ) : UpdateObject()
             }
+        }
+    }
+
+    object PayloadAsStringSerializer : KSerializer<String> {
+        override val descriptor = PrimitiveSerialDescriptor(this::class.qualifiedName!!, PrimitiveKind.STRING)
+
+        override fun deserialize(decoder: Decoder): String {
+            val input = decoder as? JsonDecoder ?: error("This serializer can be used only with Json")
+            return when (val element = input.decodeJsonElement()) {
+                is JsonPrimitive -> element.content
+                is JsonObject, is JsonArray -> element.toString()
+            }
+        }
+
+        override fun serialize(encoder: Encoder, value: String) {
+            encoder.encodeString(value)
         }
     }
 }
