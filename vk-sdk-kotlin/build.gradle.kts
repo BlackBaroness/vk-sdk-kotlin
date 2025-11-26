@@ -1,6 +1,6 @@
 plugins {
     `kotlin-conventions`
-    id("com.vanniktech.maven.publish") version "0.34.0"
+    id("com.vanniktech.maven.publish") version "0.35.0"
 }
 
 repositories {
@@ -9,7 +9,7 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
-    implementation("io.ktor:ktor-client-core:3.3.0")
+    implementation("io.ktor:ktor-client-core:3.3.3")
 }
 
 kotlin {
