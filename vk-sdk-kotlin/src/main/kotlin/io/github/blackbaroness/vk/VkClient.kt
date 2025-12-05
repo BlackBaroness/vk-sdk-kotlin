@@ -14,7 +14,6 @@ import io.github.blackbaroness.vk.model.response.Ok
 import io.github.blackbaroness.vk.model.response.VkResponse
 import io.github.blackbaroness.vk.model.response.VkResponseWithNoResponse
 import io.ktor.client.*
-import io.ktor.client.engine.*
 import io.ktor.client.plugins.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -26,33 +25,23 @@ import kotlinx.serialization.json.*
 import org.slf4j.Logger
 import java.io.Closeable
 import kotlin.time.Clock
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 class VkClient(
-    val token: String,
-    clientFactory: HttpClientEngineFactory<*>,
-    timeoutConfiguration: TimeoutConfiguration = TimeoutConfiguration()
+    private val token: String,
+    private val httpClient: HttpClient
 ) : Closeable {
 
     val groups = Groups()
     val messages = Messages()
     val users = Users()
 
-    val client = HttpClient(clientFactory) {
-        install(HttpTimeout) {
-            connectTimeoutMillis = timeoutConfiguration.connectTimeoutMillis.inWholeMilliseconds
-            socketTimeoutMillis = timeoutConfiguration.socketTimeoutMillis.inWholeMilliseconds
-            requestTimeoutMillis = timeoutConfiguration.requestTimeoutMillis.inWholeMilliseconds
-        }
-    }
-
     override fun close() {
-        client.close()
-        runBlocking { client.coroutineContext.job.join() }
+        httpClient.close()
+        runBlocking { httpClient.coroutineContext.job.join() }
     }
 
     suspend fun <RESULT, METHOD : VkMethod<RESULT>> execute(
@@ -65,7 +54,7 @@ class VkClient(
 
         try {
             url = method.customUrl ?: "https://api.vk.ru/method/${method.name}"
-            val httpResponse = client.request(url) {
+            val httpResponse = httpClient.request(url) {
                 this.method = method.httpMethod
                 parameter("access_token", token)
                 parameter("v", "5.199")
@@ -78,7 +67,6 @@ class VkClient(
             answer = httpResponse.bodyAsText()
 
             return when (method.resultStyle) {
-
                 VkMethod.ResultStyle.CUSTOM ->
                     json.decodeFromString(method.resultSerializer, answer)
 
@@ -121,6 +109,7 @@ class VkClient(
                 server = serverInfo.server
                 key = serverInfo.key
                 ts = serverInfo.ts
+                @Suppress("AssignedValueIsNeverRead")
                 nextCacheReset = Clock.System.now() + 5.minutes
             }
         }
@@ -266,12 +255,6 @@ class VkClient(
             return execute(method.apply(configure)).single()
         }
     }
-
-    data class TimeoutConfiguration(
-        val connectTimeoutMillis: Duration = 3.seconds,
-        val socketTimeoutMillis: Duration = 5.seconds,
-        val requestTimeoutMillis: Duration = 10.seconds
-    )
 
     private val Throwable.isRelatedToCancellation: Boolean
         get() {

@@ -12,14 +12,14 @@ The only VK (https://vk.ru) SDK for JVM that’s actually usable.
 ## Adding it to your project
 
 ```kotlin
-implementation("io.github.blackbaroness:vk-sdk-kotlin:1.1.1")
+implementation("io.github.blackbaroness:vk-sdk-kotlin:2.0.0")
 ```
 
 ## Example (echo bot)
 
 ```kotlin
 // let's create a bot
-val bot = VkClient("your token", CIO /* or any other ktor http client */)
+val bot = VkClient("your token", HttpClient(CIO) /* or any other ktor http client */)
 
 // we should probably make sure group owner configured longpoll correctly
 bot.groups.setLongPollSettings(groupId) {
@@ -55,7 +55,7 @@ val pollJob = scope.launch(Dispatchers.Default) {
 // let's stop it after 1 minute
 delay(1.minutes)
 pollJob.cancel() // stop polling
-bot.cancel() // close http client
+bot.close() // close http client
 ```
 
 There is much more methods available in that library, go check it out!

@@ -1,5 +1,6 @@
 package io.github.blackbaroness.vk
 
+import io.github.blackbaroness.vk.model.internal.ParameterConverter
 import io.github.blackbaroness.vk.model.`object`.Keyboard
 import io.ktor.http.*
 import kotlinx.serialization.KSerializer
@@ -20,6 +21,20 @@ abstract class VkMethod<RESULT> {
             override fun getValue(thisRef: Any?, property: KProperty<*>) = parameters[name] as? T
             override fun setValue(thisRef: Any?, property: KProperty<*>, value: T?) {
                 parameters[name] = value
+            }
+        }
+
+    @Suppress("UNCHECKED_CAST")
+    protected fun <PUBLIC, PRIVATE> parameter(
+        name: String,
+        converter: ParameterConverter<PUBLIC, PRIVATE>
+    ): ReadWriteProperty<Any?, PUBLIC?> =
+        object : ReadWriteProperty<Any?, PUBLIC?> {
+            override fun getValue(thisRef: Any?, property: KProperty<*>) =
+                parameters[name]?.let { converter.toPublic(it as PRIVATE) }
+
+            override fun setValue(thisRef: Any?, property: KProperty<*>, value: PUBLIC?) {
+                parameters[name] = value?.let { converter.toPrivate(value) }
             }
         }
 
