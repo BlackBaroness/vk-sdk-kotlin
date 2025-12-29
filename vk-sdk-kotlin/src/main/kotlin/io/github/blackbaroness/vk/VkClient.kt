@@ -83,16 +83,7 @@ class VkClient(
                 }
             }
         } catch (e: Throwable) {
-            throw RuntimeException(
-                """
-                VK API error
-                Method: ${method::class.simpleName}
-                Url: $url
-                Method parameters: ${method.parameters}
-                Status: $status
-                Answer: $answer
-            """.trimIndent(), e
-            )
+            throw GenericVkException(method, url, status, answer, e)
         }
     }
 
@@ -136,7 +127,7 @@ class VkClient(
             if (throwable.isRelatedToCancellation || throwable.isRelatedToTimeout)
                 return true
 
-            val json = (if (throwable is GenericVkException) throwable.originalMessage else throwable.message)
+            val json = throwable.rootCause?.message
                 ?.let { runCatching { json.parseToJsonElement(it) }.getOrNull() }
                 as? JsonObject
                 ?: return false
@@ -278,4 +269,13 @@ class VkClient(
 
     private val Throwable.isTimeoutException: Boolean
         get() = this is HttpRequestTimeoutException
+
+    private val Throwable.rootCause: Throwable?
+        get() {
+            var rootCause: Throwable? = this
+            while (rootCause?.cause != null) {
+                rootCause = rootCause.cause
+            }
+            return rootCause
+        }
 }

@@ -1,7 +1,32 @@
 package io.github.blackbaroness.vk.model.exception
 
-class GenericVkException(val code: Int, val originalMessage: String) : Exception() {
+import io.github.blackbaroness.vk.VkMethod
+import io.ktor.http.*
 
-    override val message: String
-        get() = "$code: $originalMessage"
+class GenericVkException private constructor(
+    override val message: String,
+    override val cause: Throwable?
+) : Exception() {
+
+    constructor(
+        code: Int,
+        originalMessage: String
+    ) : this("$code: $originalMessage", null)
+
+    constructor(
+        method: VkMethod<*>,
+        url: String?,
+        status: HttpStatusCode?,
+        answer: String?,
+        cause: Throwable?
+    ) : this(
+        """
+        VK API error
+        Method: ${method::class.simpleName}
+        Url: $url
+        Method parameters: ${method.parameters}
+        Status: $status
+        Answer: $answer
+        """.trimIndent(), cause
+    )
 }
