@@ -109,7 +109,6 @@ class VkClient(
                 server = serverInfo.server
                 key = serverInfo.key
                 ts = serverInfo.ts
-                @Suppress("AssignedValueIsNeverRead")
                 nextCacheReset = Clock.System.now() + 5.minutes
             }
         }
@@ -137,7 +136,7 @@ class VkClient(
             if (throwable.isRelatedToCancellation || throwable.isRelatedToTimeout)
                 return true
 
-            val json = throwable.message
+            val json = (if (throwable is GenericVkException) throwable.originalMessage else throwable.message)
                 ?.let { runCatching { json.parseToJsonElement(it) }.getOrNull() }
                 as? JsonObject
                 ?: return false
