@@ -2,10 +2,7 @@ package io.github.blackbaroness.vk
 
 import io.github.blackbaroness.vk.model.exception.GenericVkException
 import io.github.blackbaroness.vk.model.method.GetUpdatesVkMethod
-import io.github.blackbaroness.vk.model.method.groups.GroupsGetLongPollServerVkMethod
-import io.github.blackbaroness.vk.model.method.groups.GroupsGetLongPollSettingsVkMethod
-import io.github.blackbaroness.vk.model.method.groups.GroupsIsMemberVkMethod
-import io.github.blackbaroness.vk.model.method.groups.GroupsSetLongPollSettingsVkMethod
+import io.github.blackbaroness.vk.model.method.groups.*
 import io.github.blackbaroness.vk.model.method.messages.MessagesEditVkMethod
 import io.github.blackbaroness.vk.model.method.messages.MessagesSendVkMethod
 import io.github.blackbaroness.vk.model.method.users.UsersGetVkMethod
@@ -186,7 +183,7 @@ class VkClient(
 
     inner class Groups {
 
-        suspend fun getLongPollServer(
+        suspend inline fun getLongPollServer(
             groupId: Long,
             configure: GroupsGetLongPollServerVkMethod.() -> Unit = {},
         ): GroupsGetLongPollServerVkMethod.Result {
@@ -195,7 +192,7 @@ class VkClient(
             return execute(method.apply(configure))
         }
 
-        suspend fun getGetLongPollSettings(
+        suspend inline fun getGetLongPollSettings(
             groupId: Long,
             configure: GroupsGetLongPollSettingsVkMethod.() -> Unit = {},
         ): GroupsGetLongPollSettingsVkMethod.Result {
@@ -204,7 +201,7 @@ class VkClient(
             return execute(method.apply(configure))
         }
 
-        suspend fun setLongPollSettings(
+        suspend inline fun setLongPollSettings(
             groupId: Long,
             configure: GroupsSetLongPollSettingsVkMethod.() -> Unit = {}
         ): Int {
@@ -213,23 +210,34 @@ class VkClient(
             return execute(method.apply(configure))
         }
 
-        suspend fun isMember(groupId: String, userId: Long, configure: GroupsIsMemberVkMethod.() -> Unit = {}): Ok {
+        suspend inline fun isMember(
+            groupId: String,
+            userId: Long,
+            configure: GroupsIsMemberVkMethod.() -> Unit = {}
+        ): Ok {
             val method = GroupsIsMemberVkMethod()
             method.groupId = groupId
             method.userId = userId
             return execute(method.apply(configure))
         }
+
+        suspend inline fun getById(configure: GroupsGetByIdVkMethod.() -> Unit = {}): GroupsGetByIdVkMethod.Result {
+            return execute(GroupsGetByIdVkMethod().apply(configure))
+        }
     }
 
     inner class Messages {
 
-        suspend fun send(userId: Long, configure: MessagesSendVkMethod.() -> Unit = {}): MessagesSendVkMethod.Result {
+        suspend inline fun send(
+            userId: Long,
+            configure: MessagesSendVkMethod.() -> Unit = {}
+        ): MessagesSendVkMethod.Result {
             val method = MessagesSendVkMethod()
             method.userId = userId
             return execute(method.apply(configure))
         }
 
-        suspend fun edit(peerId: Long, message: String, configure: MessagesEditVkMethod.() -> Unit = {}): Ok {
+        suspend inline fun edit(peerId: Long, message: String, configure: MessagesEditVkMethod.() -> Unit = {}): Ok {
             val method = MessagesEditVkMethod()
             method.peerId = peerId
             method.message = message
@@ -239,7 +247,7 @@ class VkClient(
 
     inner class Users {
 
-        suspend fun get(userId: Long, configure: UsersGetVkMethod.() -> Unit = {}): User {
+        suspend inline fun get(userId: Long, configure: UsersGetVkMethod.() -> Unit = {}): User {
             val method = UsersGetVkMethod()
             method.userIds = userId.toString()
             return execute(method.apply(configure)).single()

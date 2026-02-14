@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     `kotlin-conventions`
     id("com.vanniktech.maven.publish") version "0.36.0"
@@ -14,6 +17,14 @@ dependencies {
 
 kotlin {
     jvmToolchain(17)
+}
+
+tasks.withType<JavaCompile> {
+    options.release = 17
+}
+
+tasks.withType<KotlinCompile> {
+    compilerOptions.jvmTarget = JvmTarget.JVM_17
 }
 
 tasks.test {
