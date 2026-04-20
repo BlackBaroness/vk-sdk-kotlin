@@ -1,9 +1,7 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
-    `kotlin-conventions`
-    id("com.vanniktech.maven.publish") version "0.36.0"
+    id("buildlogic.kotlin-jvm-17")
+    id("buildlogic.publish")
+    alias(libs.plugins.kotlin.plugin.serialization)
 }
 
 repositories {
@@ -11,24 +9,8 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
-    implementation("io.ktor:ktor-client-core:3.4.2")
-}
-
-kotlin {
-    jvmToolchain(17)
-}
-
-tasks.withType<JavaCompile> {
-    options.release = 17
-}
-
-tasks.withType<KotlinCompile> {
-    compilerOptions.jvmTarget = JvmTarget.JVM_17
-}
-
-tasks.test {
-    useJUnitPlatform()
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.ktor.client.core)
 }
 
 mavenPublishing {
