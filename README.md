@@ -12,7 +12,7 @@ The only VK (https://vk.ru) SDK for JVM that’s actually usable.
 ## Adding it to your project
 
 ```kotlin
-implementation("io.github.blackbaroness:vk-sdk-kotlin:2.1.0")
+implementation("io.github.blackbaroness:vk-sdk-kotlin:2.2.0")
 ```
 
 ## Example (echo bot)

@@ -3,8 +3,3 @@ plugins {
     id("com.vanniktech.maven.publish")
     `java-library`
 }
-
-java {
-    withJavadocJar()
-    withSourcesJar()
-}
