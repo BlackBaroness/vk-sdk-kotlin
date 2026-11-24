@@ -1,6 +1,7 @@
 package io.github.blackbaroness.vk
 
 import io.github.blackbaroness.vk.model.exception.GenericVkException
+import io.github.blackbaroness.vk.model.exception.LongPollVkException
 import io.github.blackbaroness.vk.model.method.GetUpdatesVkMethod
 import io.github.blackbaroness.vk.model.method.groups.*
 import io.github.blackbaroness.vk.model.method.messages.MessagesEditVkMethod
@@ -18,7 +19,7 @@ import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
 import org.slf4j.Logger
 import java.io.Closeable
 import kotlin.time.Duration.Companion.seconds
@@ -76,6 +77,7 @@ class VkClient(
                 }
             }
         } catch (e: Throwable) {
+            e.cancellationCause?.let { throw it }
             throw GenericVkException(method, url, status, answer, e)
         }
     }
@@ -116,20 +118,12 @@ class VkClient(
         }
 
         fun handleVkError(throwable: Throwable): Boolean {
-            if (throwable.isRelatedToCancellation || throwable.isRelatedToTimeout)
-                return true
-
-            val json = throwable.rootCause?.message
-                ?.let { runCatching { json.parseToJsonElement(it) }.getOrNull() }
-                as? JsonObject
-                ?: return false
-
-            val failed = (json["failed"] as? JsonPrimitive)?.intOrNull ?: return false
+            val error = throwable.rootCause as? LongPollVkException ?: return false
 
             // https://dev.vk.ru/ru/api/bots-long-poll/getting-started#%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B8
-            return when (failed) {
+            return when (error.failed) {
                 1 -> {
-                    ts = json["ts"]?.jsonPrimitive?.content
+                    ts = error.ts
                     true
                 }
 
@@ -148,22 +142,19 @@ class VkClient(
             }
         }
 
+        var retryDelay = 5.seconds
         while (currentCoroutineContext().isActive) {
             try {
-                while (currentCoroutineContext().isActive) {
-                    ensureLongPollServer()
-                    poll()
-                }
+                ensureLongPollServer()
+                poll()
+                retryDelay = 5.seconds
             } catch (t: Throwable) {
-                try {
-                    if (!handleVkError(t)) {
-                        logger?.error("Failed to get updates from VK, waiting 5s before retry", t)
-                        delay(5.seconds)
-                    }
-                } catch (handleThrowable: Throwable) {
-                    handleThrowable.addSuppressed(t)
-                    logger?.error("Error handling VK error, waiting 5s before retry", handleThrowable)
-                    delay(5.seconds)
+                t.cancellationCause?.let { throw it }
+                currentCoroutineContext().ensureActive()
+                if (!handleVkError(t)) {
+                    logger?.error("Failed to get updates from VK, waiting $retryDelay before retry", t)
+                    delay(retryDelay)
+                    retryDelay = (retryDelay * 2).coerceAtMost(60.seconds)
                 }
             }
         }
@@ -256,29 +247,14 @@ class VkClient(
         }
     }
 
-    private val Throwable.isRelatedToCancellation: Boolean
+    private val Throwable.cancellationCause: CancellationException?
         get() {
             var throwable = this
             while (true) {
-                if (throwable.isCancellationException) return true
-                throwable = throwable.cause ?: return false
+                if (throwable is CancellationException) return throwable
+                throwable = throwable.cause ?: return null
             }
         }
-
-    private val Throwable.isCancellationException: Boolean
-        get() = this is CancellationException
-
-    private val Throwable.isRelatedToTimeout: Boolean
-        get() {
-            var throwable = this
-            while (true) {
-                if (throwable.isTimeoutException) return true
-                throwable = throwable.cause ?: return false
-            }
-        }
-
-    private val Throwable.isTimeoutException: Boolean
-        get() = this is HttpRequestTimeoutException
 
     private val Throwable.rootCause: Throwable?
         get() {

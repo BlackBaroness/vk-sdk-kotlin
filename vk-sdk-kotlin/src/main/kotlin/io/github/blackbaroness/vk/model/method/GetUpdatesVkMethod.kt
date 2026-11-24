@@ -2,12 +2,14 @@ package io.github.blackbaroness.vk.model.method
 
 import io.github.blackbaroness.vk.VkClient.Companion.json
 import io.github.blackbaroness.vk.VkMethod
+import io.github.blackbaroness.vk.model.exception.LongPollVkException
 import io.github.blackbaroness.vk.model.`object`.ClientInfo
 import io.github.blackbaroness.vk.model.`object`.Message
 import io.ktor.http.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
@@ -18,7 +20,17 @@ import kotlinx.serialization.json.*
 class GetUpdatesVkMethod : VkMethod<GetUpdatesVkMethod.Result>() {
 
     override val name get() = throw UnsupportedOperationException()
-    override val resultSerializer = Result.serializer()
+    override val resultSerializer = object : JsonTransformingSerializer<Result>(Result.serializer()) {
+        override fun transformDeserialize(element: JsonElement): JsonElement {
+            val response = element.jsonObject
+            val failed = response["failed"]?.jsonPrimitive?.int ?: return element
+            val ts = response["ts"]?.jsonPrimitive?.contentOrNull
+            if (failed == 1 && ts == null) {
+                throw SerializationException("Long Poll failed=1 response is missing ts")
+            }
+            throw LongPollVkException(failed, ts)
+        }
+    }
     override val httpMethod = HttpMethod.Get
     override val resultStyle = ResultStyle.CUSTOM
 

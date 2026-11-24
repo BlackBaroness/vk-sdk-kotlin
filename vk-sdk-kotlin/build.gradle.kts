@@ -11,6 +11,9 @@ repositories {
 dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.ktor.client.core)
+    testImplementation(kotlin("test"))
+    testImplementation(libs.ktor.client.mock)
+    testImplementation(libs.kotlinx.coroutines.test)
 }
 
 mavenPublishing {
