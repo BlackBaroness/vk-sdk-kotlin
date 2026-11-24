@@ -21,11 +21,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.json.*
 import org.slf4j.Logger
 import java.io.Closeable
-import kotlin.time.Clock
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
-import kotlin.time.Instant
 
 class VkClient(
     private val token: String,
@@ -84,20 +80,19 @@ class VkClient(
         }
     }
 
-    @OptIn(ExperimentalTime::class)
     fun startLongPolling(communityId: Long, logger: Logger?): Flow<GetUpdatesVkMethod.Result.Update> = flow {
         var server: String? = null
         var key: String? = null
         var ts: String? = null
-        var nextCacheReset = Instant.DISTANT_PAST
 
         suspend fun ensureLongPollServer() {
-            if (server == null || key == null || ts == null || Clock.System.now() > nextCacheReset) {
+            if (server == null || key == null || ts == null) {
                 val serverInfo = groups.getLongPollServer(communityId)
                 server = serverInfo.server
                 key = serverInfo.key
-                ts = serverInfo.ts
-                nextCacheReset = Clock.System.now() + 5.minutes
+
+                if (ts == null)
+                    ts = serverInfo.ts
             }
         }
 
@@ -131,14 +126,21 @@ class VkClient(
 
             val failed = (json["failed"] as? JsonPrimitive)?.intOrNull ?: return false
 
+            // https://dev.vk.ru/ru/api/bots-long-poll/getting-started#%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B8
             return when (failed) {
                 1 -> {
                     ts = json["ts"]?.jsonPrimitive?.content
                     true
                 }
 
-                2, 3 -> {
-                    nextCacheReset = Instant.DISTANT_PAST
+                2 -> {
+                    key = null
+                    true
+                }
+
+                3 -> {
+                    key = null
+                    ts = null
                     true
                 }
 
