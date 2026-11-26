@@ -42,13 +42,14 @@ class VkClient(
         method: METHOD,
         clientConfigurator: HttpRequestBuilder.() -> Unit = {}
     ): RESULT {
-        var url: String? = null
+        var urlBuilder: URLBuilder? = null
         var answer: String? = null
         var status: HttpStatusCode? = null
 
         try {
-            url = method.customUrl ?: "https://api.vk.ru/method/${method.name}"
+            val url = method.customUrl ?: "https://api.vk.ru/method/${method.name}"
             val httpResponse = httpClient.request(url) {
+                urlBuilder = this.url
                 this.method = method.httpMethod
                 parameter("access_token", token)
                 parameter("v", "5.199")
@@ -78,6 +79,27 @@ class VkClient(
             }
         } catch (e: Throwable) {
             e.cancellationCause?.let { throw it }
+
+            val url = urlBuilder?.clone()?.apply {
+                for (name in listOf("access_token", "key")) {
+                    val values = parameters.getAll(name) ?: continue
+                    parameters.remove(name)
+                    parameters.appendAll(name, values.map { value ->
+                        val headLength = 3
+                        val tailLength = 3
+                        val shownLength = headLength + tailLength
+                        if (value.length <= shownLength) {
+                            "*".repeat(value.length)
+                        } else {
+                            val head = value.take(headLength)
+                            val tail = value.takeLast(tailLength)
+                            val body = "*".repeat(value.length - shownLength)
+                            head + body + tail
+                        }
+                    })
+                }
+            }?.buildString()
+
             throw GenericVkException(method, url, status, answer, e)
         }
     }
